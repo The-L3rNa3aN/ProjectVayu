@@ -1405,11 +1405,13 @@ MonoBehaviour:
   v_travel: {x: 0, y: 0, z: 0}
   f_travelVectorMagnitude: 10
   f_torqueMultiplier: 0.05
+  f_tempRoll: 0
+  f_throttleIncrement: 0.2
+  f_maxThrust: 200
   cameraPlaceholder: {fileID: 0}
   cameraLookAtTarget: {fileID: 0}
   smoothTime: 0.3
   f_travelMag: 0
-  f_fwdToTravelAngle: 0
 --- !u!54 &2015041097
 Rigidbody:
   m_ObjectHideFlags: 0
