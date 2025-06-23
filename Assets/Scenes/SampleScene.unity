@@ -1412,7 +1412,8 @@ MonoBehaviour:
   cameraPlaceholder: {fileID: 0}
   cameraLookAtTarget: {fileID: 0}
   smoothTime: 0.3
-  f_travelMag: 0
+  b_visualizeVectors: 1
+  e_movementOptions: 1
 --- !u!54 &2015041097
 Rigidbody:
   m_ObjectHideFlags: 0
