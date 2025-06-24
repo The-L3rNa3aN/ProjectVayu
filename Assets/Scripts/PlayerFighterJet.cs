@@ -20,7 +20,7 @@ public class PlayerFighterJet : MonoBehaviour
     private float f_fwdToTravelAngle;
     private float f_rgtToTravelAngle;
 
-    private float f_turningConstant = 2.8125f;
+    [SerializeField] private float f_turningConstant = 2.8125f;
 
     [Header("Jet throttle")]
     public float f_throttleIncrement = 0.2f;
@@ -29,8 +29,7 @@ public class PlayerFighterJet : MonoBehaviour
 
     [Header("Chase-camera handling")]
     public GameObject cameraPlaceholder;
-    public Transform cameraLookAtTarget;
-    public float smoothTime = 0.3f;
+    private readonly float smoothTime = 0.1f;
     private Vector3 camRefVelocity = Vector3.zero;
 
     [Header("DEBUG")]
@@ -53,7 +52,7 @@ public class PlayerFighterJet : MonoBehaviour
         float z = Input.GetAxis("Roll");
         float t = Input.GetAxisRaw("Throttle");
 
-        if (cameraPlaceholder && cameraLookAtTarget) CameraUpdate();
+        if (cameraPlaceholder /*&& cameraLookAtTarget*/) CameraUpdate();
         if (b_visualizeVectors) VisualizeVectors();
 
         // Throttle controls.
@@ -103,32 +102,34 @@ public class PlayerFighterJet : MonoBehaviour
         //transform.rotation = Quaternion.LookRotation(yawPitch);
         //transform.rotation = Quaternion.LookRotation(roll);
 
-        transform.Rotate(Vector3.up, f_turningConstant * _yaw, Space.Self);
-        transform.Rotate(Vector3.right, -f_turningConstant * _pitch, Space.Self);
-        transform.Rotate(Vector3.forward, -f_turningConstant * _roll, Space.Self);
+        /* TO DO: -
+         * Calculate 'f_turningConstant' based on the current speed of the jet and check if its different for different axes. */
+        transform.Rotate(Vector3.up, f_turningConstant * _yaw * Time.deltaTime, Space.Self);
+        transform.Rotate(Vector3.right, -f_turningConstant * _pitch * Time.deltaTime, Space.Self);
+        transform.Rotate(Vector3.forward, -f_turningConstant * _roll * Time.deltaTime, Space.Self);
     }
 
-    //private void FixedUpdate()
-    //{
-    //    // Throttle
-    //    rb.AddForce(f_throttle * f_maxThrust * transform.forward);
+    private void FixedUpdate()
+    {
+        // Throttle
+        rb.AddForce(f_throttle * f_maxThrust * transform.forward);
 
-    //    // Rotating the jet along the X and Y axes for now. (TO DO: extra dampening for the torque forces.)
-    //    rb.AddTorque(f_fwdToTravelAngle * f_torqueMultiplier * v_fwdTorqueAxis, ForceMode.Acceleration);
+        if (e_movementOptions == MovementOptions.RigidbodyBased)
+        {
+            // Rotating the jet along the X and Y axes for now. (TO DO: extra dampening for the torque forces.)
+            rb.AddTorque(f_fwdToTravelAngle * f_torqueMultiplier * v_fwdTorqueAxis, ForceMode.Acceleration);
 
-    //    // Rotating the jet on the Z axis to simulate roll.
-    //    rb.AddTorque(f_rgtToTravelAngle * f_torqueMultiplier * v_rgtTorqueAxis, ForceMode.Acceleration);
-    //}
+            // Rotating the jet on the Z axis to simulate roll.
+            rb.AddTorque(f_rgtToTravelAngle * f_torqueMultiplier * v_rgtTorqueAxis, ForceMode.Acceleration);
+        }
+    }
 
     private void CameraUpdate()
     {
         // Lerp camera position to the placeholder's.
-        Camera.main.transform.position = Vector3.SmoothDamp(Camera.main.transform.position, cameraPlaceholder.transform.position, ref camRefVelocity, smoothTime);
-
-        // Lerp the camera's rotation on the player.
-        Camera.main.transform.LookAt(cameraLookAtTarget);
-
-        Camera.main.transform.rotation = cameraPlaceholder.transform.rotation;
+        Vector3 _pos = Vector3.SmoothDamp(Camera.main.transform.position, cameraPlaceholder.transform.position, ref camRefVelocity, smoothTime);
+        Quaternion _rot = cameraPlaceholder.transform.rotation;
+        Camera.main.transform.SetPositionAndRotation(_pos, _rot);
     }
 
     private void VisualizeVectors()
