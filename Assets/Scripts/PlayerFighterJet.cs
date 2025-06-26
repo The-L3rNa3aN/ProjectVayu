@@ -6,6 +6,7 @@ using UnityEngine;
 public class PlayerFighterJet : MonoBehaviour
 {
     private Rigidbody rb;
+    private const float F_GRAVITY = 9.81f;
 
     [Header("Vector-based jet rotation")]
     public Vector3 v_travel;                        // The travel vector that directs the gameobject's main velocity vector.
@@ -102,11 +103,22 @@ public class PlayerFighterJet : MonoBehaviour
         //transform.rotation = Quaternion.LookRotation(yawPitch);
         //transform.rotation = Quaternion.LookRotation(roll);
 
-        /* TO DO: -
-         * Calculate 'f_turningConstant' based on the current speed of the jet and check if its different for different axes. */
-        transform.Rotate(Vector3.up, f_turningConstant * _yaw * Time.deltaTime, Space.Self);
-        transform.Rotate(Vector3.right, -f_turningConstant * _pitch * Time.deltaTime, Space.Self);
-        transform.Rotate(Vector3.forward, -f_turningConstant * _roll * Time.deltaTime, Space.Self);
+        /* BANK ANGLE OF AIRCRAFT: -
+         * a = arctan(v ^ 2 / g * r)        'a': angle, 'v': velocity, 'g': gravity, 'r': turn radius
+         * 
+         * Other things worth checking out: -
+         * 1. Calculating the radial G of an aircraft (required for an alternate formula: r = v ^ 2 / radial G)
+         * 2. Calculating the turn angle using the dot product and arc-cosine function for the forward and velocity vector.*/
+
+        float _p = f_throttle * f_maxThrust;
+        _p *= _p;
+        //float _p = rb.linearVelocity.magnitude * rb.linearVelocity.magnitude;
+        float _q = F_GRAVITY * f_turningConstant;
+        float angle = Mathf.Atan(_p / _q);
+
+        transform.Rotate(Vector3.up, angle * _yaw * Time.deltaTime, Space.Self);
+        transform.Rotate(Vector3.right, -angle * _pitch * Time.deltaTime, Space.Self);
+        transform.Rotate(Vector3.forward, -angle * _roll * Time.deltaTime, Space.Self);
     }
 
     private void FixedUpdate()
