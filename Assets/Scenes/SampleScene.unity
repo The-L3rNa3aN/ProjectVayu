@@ -1628,7 +1628,7 @@ Transform:
   m_GameObject: {fileID: 2015041089}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -21.047039, y: 12.430162, z: -20.039194}
+  m_LocalPosition: {x: -21.047039, y: 19.37, z: -20.039194}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1646,11 +1646,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9148b0bbb2cf3a64889255bfa14b7031, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tempMultiplier: 50
+  rotMultiplier: 10000000
+  fakeVelocity: 1000000
   v_travel: {x: 0, y: 0, z: 0}
   v_roll: {x: 0, y: 0, z: 0}
   f_travelVectorMagnitude: 10
   f_torqueMultiplier: 0.05
-  f_turningConstant: 2.8125
   f_throttleIncrement: 0.2
   f_maxThrust: 200
   f_throttle: 0
@@ -1971,11 +1973,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9148b0bbb2cf3a64889255bfa14b7031, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tempMultiplier: 50
+  rotMultiplier: 10000000
+  fakeVelocity: 1000000
   v_travel: {x: 0, y: 0, z: 0}
   v_roll: {x: 0, y: 0, z: 0}
   f_travelVectorMagnitude: 10
   f_torqueMultiplier: 0.05
-  f_turningConstant: 2.8125
   f_throttleIncrement: 5
   f_maxThrust: 200
   f_throttle: 0

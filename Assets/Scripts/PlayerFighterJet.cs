@@ -1,5 +1,4 @@
-/* My attempt at writing the fighter jet movement code in the style of Quake (1997)'s player movement logic. */
-
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -7,6 +6,9 @@ public class PlayerFighterJet : MonoBehaviour
 {
     private Rigidbody rb;
     private const float F_GRAVITY = 9.81f;
+    [SerializeField] private float tempMultiplier = 150f;
+    [SerializeField] private float rotMultiplier = 50f;
+    [SerializeField][Range(0f, 1000000f)] private float fakeVelocity;
 
     [Header("Vector-based jet rotation")]
     public Vector3 v_travel;                        // The travel vector that directs the gameobject's main velocity vector.
@@ -21,7 +23,7 @@ public class PlayerFighterJet : MonoBehaviour
     private float f_fwdToTravelAngle;
     private float f_rgtToTravelAngle;
 
-    [SerializeField] private float f_turningConstant = 2.8125f;
+    //[SerializeField] private float f_turningConstant = 2.8125f;
 
     [Header("Jet throttle")]
     public float f_throttleIncrement = 0.2f;
@@ -60,17 +62,18 @@ public class PlayerFighterJet : MonoBehaviour
         f_throttle += f_throttleIncrement * t;
         if (f_throttle >= 5000f) f_throttle = 5000f;
         if (f_throttle <= 0f) f_throttle = 0f;
+        f_throttle *= f_maxThrust;
 
         v_main = transform.forward * 10f;
         v_lateral = transform.up * 10f;
 
-        v_travel = (transform.right * x + transform.up * y + transform.forward).normalized * f_travelVectorMagnitude;
-        v_roll = (transform.right * z + transform.up).normalized * f_travelVectorMagnitude;
+        //v_travel = (transform.right * x + transform.up * y + transform.forward).normalized * f_travelVectorMagnitude;
+        //v_roll = (transform.right * z + transform.up).normalized * f_travelVectorMagnitude;
 
         switch (e_movementOptions)
         {
             case MovementOptions.RigidbodyBased:
-                RigidBodyBasedAxesMovement();
+                RigidBodyBasedAxesMovement(x, y, z);
                 break;
 
             case MovementOptions.BruteForce:
@@ -79,8 +82,13 @@ public class PlayerFighterJet : MonoBehaviour
         }
     }
 
-    private void RigidBodyBasedAxesMovement()
+    private void RigidBodyBasedAxesMovement(float _x, float _y, float _z)
     {
+        /* Attempt at Quake's vector-based player movement implementation. */
+
+        v_travel = (transform.right * _x + transform.up * _y + transform.forward).normalized * f_travelVectorMagnitude;
+        v_roll = (transform.right * _z + transform.up).normalized * f_travelVectorMagnitude;
+
         Vector3 targetDir = (v_travel - v_main).normalized;
         v_fwdTorqueAxis = Vector3.Cross(transform.forward, targetDir);
         f_fwdToTravelAngle = Vector3.Angle(transform.forward, targetDir);
@@ -110,29 +118,42 @@ public class PlayerFighterJet : MonoBehaviour
          * 1. Calculating the radial G of an aircraft (required for an alternate formula: r = v ^ 2 / radial G)
          * 2. Calculating the turn angle using the dot product and arc-cosine function for the forward and velocity vector.*/
 
-        float _p = f_throttle * f_maxThrust;
-        _p *= _p;
-        //float _p = rb.linearVelocity.magnitude * rb.linearVelocity.magnitude;
-        float _q = F_GRAVITY * f_turningConstant;
-        float angle = Mathf.Atan(_p / _q);
+        /* RATE OF TURN OF AIRCRAFT: -
+         * w = g * tan(a) / v               'w': rate of turn (degrees/radians in seconds), 'g': gravity, 'a': bank angle, 'v': velocity*/
 
-        transform.Rotate(Vector3.up, angle * _yaw * Time.deltaTime, Space.Self);
-        transform.Rotate(Vector3.right, -angle * _pitch * Time.deltaTime, Space.Self);
-        transform.Rotate(Vector3.forward, -angle * _roll * Time.deltaTime, Space.Self);
+        //transform.Rotate(Vector3.up, test, Space.Self);
+        //transform.Rotate(Vector3.up, angle * Time.deltaTime, Space.Self);
+        transform.Rotate(Vector3.up, _yaw * tempMultiplier * Time.deltaTime, Space.Self);
+        transform.Rotate(Vector3.right, -_pitch * tempMultiplier * Time.deltaTime, Space.Self);
+        transform.Rotate(Vector3.forward, _roll * tempMultiplier * Time.deltaTime, Space.Self);
+
+        float bankAngle = transform.localEulerAngles.z;
+        if (bankAngle > 180) bankAngle -= 360f;
+        bankAngle *= Mathf.Deg2Rad;
+        //float rateOfTurn = -(F_GRAVITY * Mathf.Tan(bankAngle)) / fakeVelocity;
+        float rateOfTurn = -(F_GRAVITY * Mathf.Tan(bankAngle)) / f_throttle;
+
+        // Bank angle implementation.
+        transform.Rotate(Vector3.up, rateOfTurn * rotMultiplier * Time.deltaTime, Space.World);
     }
 
     private void FixedUpdate()
     {
         // Throttle
-        rb.AddForce(f_throttle * f_maxThrust * transform.forward);
+        rb.AddForce(f_throttle * transform.forward);
 
-        if (e_movementOptions == MovementOptions.RigidbodyBased)
+        // Weight?
+        //rb.AddForce(F_GRAVITY * Time.fixedDeltaTime * Time.fixedDeltaTime * Vector3.down, ForceMode.Force);
+
+        switch (e_movementOptions)
         {
-            // Rotating the jet along the X and Y axes for now. (TO DO: extra dampening for the torque forces.)
-            rb.AddTorque(f_fwdToTravelAngle * f_torqueMultiplier * v_fwdTorqueAxis, ForceMode.Acceleration);
+            case MovementOptions.RigidbodyBased:
+                // Rotating the jet along the X and Y axes for now. (TO DO: extra dampening for the torque forces.)
+                rb.AddTorque(f_fwdToTravelAngle * f_torqueMultiplier * v_fwdTorqueAxis, ForceMode.Acceleration);
 
-            // Rotating the jet on the Z axis to simulate roll.
-            rb.AddTorque(f_rgtToTravelAngle * f_torqueMultiplier * v_rgtTorqueAxis, ForceMode.Acceleration);
+                // Rotating the jet on the Z axis to simulate roll.
+                rb.AddTorque(f_rgtToTravelAngle * f_torqueMultiplier * v_rgtTorqueAxis, ForceMode.Acceleration);
+                break;
         }
     }
 
@@ -146,12 +167,12 @@ public class PlayerFighterJet : MonoBehaviour
 
     private void VisualizeVectors()
     {
-        v_forwardVisualizer = v_main;
-        v_rightVisualizer = v_lateral;
+        //v_forwardVisualizer = v_main;
+        //v_rightVisualizer = v_lateral;
 
-        Debug.DrawRay(transform.position, v_forwardVisualizer, Color.blue);
-        Debug.DrawRay(transform.position, v_rightVisualizer, Color.red);
-        Debug.DrawRay(transform.position, v_travel, Color.magenta);
-        Debug.DrawRay(transform.position, v_roll, Color.cyan);
+        //Debug.DrawRay(transform.position, v_forwardVisualizer, Color.blue);
+        //Debug.DrawRay(transform.position, v_rightVisualizer, Color.red);
+        //Debug.DrawRay(transform.position, v_travel, Color.magenta);
+        //Debug.DrawRay(transform.position, v_roll, Color.cyan);
     }
 }
